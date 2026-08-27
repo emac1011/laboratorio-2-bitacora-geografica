@@ -1,16 +1,21 @@
 ﻿import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   AppState,
+  Image,
   Linking,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useCameraPermissions } from 'expo-camera';
+import {
+  CameraView,
+  useCameraPermissions,
+} from 'expo-camera';
 import * as Location from 'expo-location';
+import { usePhotos } from '../context/PhotoContext';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NuevaFotografia'>;
@@ -23,6 +28,18 @@ export default function CameraScreen({ navigation }: Props) {
     useState<Location.PermissionResponse | null>(null);
 
   const [loadingPermissions, setLoadingPermissions] = useState(true);
+
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+
+  const [capturing, setCapturing] = useState(false);
+
+  const [captureError, setCaptureError] = useState<string | null>(
+    null
+  );
+
+  const cameraRef = useRef<CameraView>(null);
+
+  const { addPhoto } = usePhotos();
 
   const checkPermissions = async () => {
     try {
@@ -79,6 +96,66 @@ export default function CameraScreen({ navigation }: Props) {
     }
   };
 
+  const takePhoto = async () => {
+    if (!cameraRef.current || capturing) {
+      return;
+    }
+
+    setCapturing(true);
+    setCaptureError(null);
+
+    try {
+      const currentLocationPermission =
+        await Location.getForegroundPermissionsAsync();
+
+      if (!currentLocationPermission.granted) {
+        setCaptureError(
+          'No se puede tomar la fotografía porque el permiso de ubicación no está disponible.'
+        );
+        return;
+      }
+
+      const location =
+        await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
+
+      const photo =
+        await cameraRef.current.takePictureAsync();
+
+      if (!photo?.uri) {
+        setCaptureError(
+          'No se pudo obtener la fotografía.'
+        );
+        return;
+      }
+
+      addPhoto(
+        photo.uri,
+        location.coords.latitude,
+        location.coords.longitude
+      );
+
+      setPhotoUri(photo.uri);
+    } catch (error) {
+      console.error(
+        'Error tomando fotografía con GPS:',
+        error
+      );
+
+      setCaptureError(
+        'No se pudo tomar la fotografía con su ubicación. Intenta nuevamente.'
+      );
+    } finally {
+      setCapturing(false);
+    }
+  };
+
+  const retakePhoto = () => {
+    setPhotoUri(null);
+    setCaptureError(null);
+  };
+
   useEffect(() => {
     checkPermissions();
   }, []);
@@ -100,7 +177,7 @@ export default function CameraScreen({ navigation }: Props) {
 
   if (loadingPermissions || !cameraPermission) {
     return (
-      <View style={styles.container}>
+      <View style={styles.centerContainer}>
         <ActivityIndicator size="large" />
 
         <Text style={styles.loadingText}>
@@ -130,83 +207,91 @@ export default function CameraScreen({ navigation }: Props) {
     (!cameraGranted && !cameraCanAskAgain) ||
     (!locationGranted && !locationCanAskAgain);
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>
-        Nueva fotografía
-      </Text>
-
-      <Text style={styles.description}>
-        La Bitácora Geográfica necesita acceso a la
-        cámara y a la ubicación para registrar cada
-        fotografía junto con sus coordenadas.
-      </Text>
-
-      <View style={styles.permissionCard}>
-        <Text style={styles.permissionTitle}>
-          📷 Cámara
+  if (!permissionsGranted) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.title}>
+          Nueva fotografía
         </Text>
 
-        <Text style={styles.permissionStatus}>
-          {cameraGranted
-            ? 'Permiso concedido'
-            : 'Permiso pendiente'}
-        </Text>
-      </View>
-
-      <View style={styles.permissionCard}>
-        <Text style={styles.permissionTitle}>
-          📍 Ubicación
+        <Text style={styles.description}>
+          La Bitácora Geográfica necesita acceso a la
+          cámara y a la ubicación para registrar cada
+          fotografía junto con sus coordenadas.
         </Text>
 
-        <Text style={styles.permissionStatus}>
-          {locationGranted
-            ? 'Permiso concedido'
-            : 'Permiso pendiente'}
-        </Text>
-      </View>
+        <View style={styles.permissionCard}>
+          <Text style={styles.permissionTitle}>
+            📷 Cámara
+          </Text>
 
-      {!permissionsGranted && (
-        <>
-          <Text style={styles.warning}>
+          <Text style={styles.permissionStatus}>
+            {cameraGranted
+              ? 'Permiso concedido'
+              : 'Permiso pendiente'}
+          </Text>
+        </View>
+
+        <View style={styles.permissionCard}>
+          <Text style={styles.permissionTitle}>
+            📍 Ubicación
+          </Text>
+
+          <Text style={styles.permissionStatus}>
+            {locationGranted
+              ? 'Permiso concedido'
+              : 'Permiso pendiente'}
+          </Text>
+        </View>
+
+        <Text style={styles.warning}>
+          {needsSettings
+            ? 'Uno o más permisos fueron rechazados y deben habilitarse desde la configuración del teléfono.'
+            : 'Para tomar una fotografía geográfica debes conceder ambos permisos.'}
+        </Text>
+
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={
+            needsSettings
+              ? openSettings
+              : requestPermissions
+          }
+        >
+          <Text style={styles.buttonText}>
             {needsSettings
-              ? 'Uno o más permisos fueron rechazados y deben habilitarse desde la configuración del teléfono.'
-              : 'Para tomar una fotografía geográfica debes conceder ambos permisos.'}
+              ? 'Abrir configuración'
+              : 'Conceder permisos'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (photoUri) {
+    return (
+      <View style={styles.photoContainer}>
+        <Image
+          source={{ uri: photoUri }}
+          style={styles.photo}
+          resizeMode="cover"
+        />
+
+        <View style={styles.photoActions}>
+          <Text style={styles.photoTitle}>
+            Fotografía capturada
+          </Text>
+
+          <Text style={styles.gpsSuccess}>
+            ✓ Fotografía guardada con coordenadas GPS
           </Text>
 
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={
-              needsSettings
-                ? openSettings
-                : requestPermissions
-            }
+            onPress={retakePhoto}
           >
             <Text style={styles.buttonText}>
-              {needsSettings
-                ? 'Abrir configuración'
-                : 'Conceder permisos'}
-            </Text>
-          </TouchableOpacity>
-        </>
-      )}
-
-      {permissionsGranted && (
-        <>
-          <View style={styles.successCard}>
-            <Text style={styles.successText}>
-              ✓ Todos los permisos están concedidos
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => {
-              // La cámara se implementará en el siguiente paso.
-            }}
-          >
-            <Text style={styles.buttonText}>
-              Tomar fotografía
+              Tomar otra fotografía
             </Text>
           </TouchableOpacity>
 
@@ -220,18 +305,113 @@ export default function CameraScreen({ navigation }: Props) {
               Ver mis fotografías
             </Text>
           </TouchableOpacity>
-        </>
-      )}
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.cameraContainer}>
+      <CameraView
+        ref={cameraRef}
+        style={styles.camera}
+        facing="back"
+      />
+
+      <View style={styles.cameraOverlay}>
+        <Text style={styles.cameraTitle}>
+          Nueva fotografía
+        </Text>
+
+        {captureError && (
+          <Text style={styles.captureError}>
+            {captureError}
+          </Text>
+        )}
+
+        <TouchableOpacity
+          style={styles.captureButton}
+          onPress={takePhoto}
+          disabled={capturing}
+        >
+          {capturing ? (
+            <ActivityIndicator size="large" />
+          ) : (
+            <Text style={styles.captureButtonText}>
+              📸
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  centerContainer: {
     flex: 1,
     padding: 20,
     backgroundColor: '#f5f5f5',
     justifyContent: 'center',
+  },
+  cameraContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  camera: {
+    flex: 1,
+  },
+  cameraOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    paddingBottom: 40,
+    paddingTop: 20,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  cameraTitle: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  captureButton: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 5,
+    borderColor: '#ddd',
+  },
+  captureButtonText: {
+    fontSize: 32,
+  },
+  photoContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  photo: {
+    flex: 1,
+    width: '100%',
+  },
+  photoActions: {
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  photoTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  gpsSuccess: {
+    fontSize: 15,
+    textAlign: 'center',
+    marginBottom: 16,
   },
   title: {
     fontSize: 28,
@@ -271,18 +451,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 16,
   },
-  successCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  successText: {
-    fontSize: 16,
+  captureError: {
+    color: '#fff',
     textAlign: 'center',
-    fontWeight: 'bold',
+    fontSize: 14,
+    lineHeight: 20,
+    marginHorizontal: 20,
+    marginBottom: 15,
   },
   primaryButton: {
     backgroundColor: '#222',
