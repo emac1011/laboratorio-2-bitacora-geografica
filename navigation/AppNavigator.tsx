@@ -1,6 +1,7 @@
 ﻿import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text, StyleSheet } from 'react-native';
+import CameraScreen from '../screens/CameraScreen';
+import GalleryScreen from '../screens/GalleryScreen';
 
 export type RootStackParamList = {
   NuevaFotografia: undefined;
@@ -8,28 +9,6 @@ export type RootStackParamList = {
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-
-function NuevaFotografiaPlaceholder() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Nueva fotografía</Text>
-      <Text style={styles.text}>
-        Aquí podremos tomar una fotografía y obtener las coordenadas GPS.
-      </Text>
-    </View>
-  );
-}
-
-function MisFotografiasPlaceholder() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Mis fotografías</Text>
-      <Text style={styles.text}>
-        Aquí aparecerán las fotografías tomadas.
-      </Text>
-    </View>
-  );
-}
 
 export default function AppNavigator() {
   return (
@@ -42,7 +21,7 @@ export default function AppNavigator() {
       >
         <Stack.Screen
           name="NuevaFotografia"
-          component={NuevaFotografiaPlaceholder}
+          component={CameraScreen}
           options={{
             title: 'Nueva fotografía',
           }}
@@ -50,7 +29,7 @@ export default function AppNavigator() {
 
         <Stack.Screen
           name="MisFotografias"
-          component={MisFotografiasPlaceholder}
+          component={GalleryScreen}
           options={{
             title: 'Mis fotografías',
           }}
@@ -59,22 +38,3 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  text: {
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-});
