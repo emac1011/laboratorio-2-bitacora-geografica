@@ -1,4 +1,10 @@
-﻿import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+﻿import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { usePhotos } from '../context/PhotoContext';
 
 export default function GalleryScreen() {
@@ -8,20 +14,51 @@ export default function GalleryScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.title}>
-        Mis fotografías
-      </Text>
+      <View style={styles.intro}>
+        <View style={styles.iconCircle}>
+          <Text style={styles.iconText}>
+            📷
+          </Text>
+        </View>
+
+        <Text style={styles.title}>
+          Mis fotografías
+        </Text>
+
+        <Text style={styles.subtitle}>
+          Tus lugares registrados en la bitácora
+        </Text>
+
+        {photos.length > 0 && (
+          <View style={styles.counter}>
+            <Text style={styles.counterText}>
+              {photos.length}{' '}
+              {photos.length === 1
+                ? 'registro'
+                : 'registros'}
+            </Text>
+          </View>
+        )}
+      </View>
 
       {photos.length === 0 ? (
         <View style={styles.emptyContainer}>
+          <View style={styles.emptyIcon}>
+            <Text style={styles.emptyIconText}>
+              📍
+            </Text>
+          </View>
+
           <Text style={styles.emptyTitle}>
-            No hay fotografías todavía
+            Tu bitácora está vacía
           </Text>
 
           <Text style={styles.emptyText}>
             Las fotografías que tomes aparecerán aquí
-            junto con su descripción y coordenadas GPS.
+            junto con su descripción y las coordenadas
+            GPS del lugar donde fueron capturadas.
           </Text>
         </View>
       ) : (
@@ -37,21 +74,52 @@ export default function GalleryScreen() {
             />
 
             <View style={styles.photoInfo}>
-              <Text style={styles.photoNumber}>
-                Fotografía #{photos.length - index}
-              </Text>
+              <View style={styles.photoHeader}>
+                <Text style={styles.photoNumber}>
+                  Registro #{photos.length - index}
+                </Text>
 
-              <Text style={styles.coordinatesTitle}>
-                Coordenadas GPS
-              </Text>
+                <View style={styles.gpsBadge}>
+                  <Text style={styles.gpsBadgeText}>
+                    GPS
+                  </Text>
+                </View>
+              </View>
 
-              <Text style={styles.coordinates}>
-                Latitud: {photo.latitude.toFixed(6)}
-              </Text>
+              <View style={styles.infoSection}>
+                <Text style={styles.sectionLabel}>
+                  DESCRIPCIÓN
+                </Text>
 
-              <Text style={styles.coordinates}>
-                Longitud: {photo.longitude.toFixed(6)}
-              </Text>
+                <Text style={styles.descriptionText}>
+                  {photo.description ||
+                    'Sin descripción'}
+                </Text>
+              </View>
+
+              <View style={styles.infoSection}>
+                <Text style={styles.sectionLabel}>
+                  UBICACIÓN
+                </Text>
+
+                <View style={styles.coordinateBox}>
+                  <Text style={styles.coordinates}>
+                    Latitud
+                  </Text>
+
+                  <Text style={styles.coordinateValue}>
+                    {photo.latitude.toFixed(6)}
+                  </Text>
+
+                  <Text style={styles.coordinates}>
+                    Longitud
+                  </Text>
+
+                  <Text style={styles.coordinateValue}>
+                    {photo.longitude.toFixed(6)}
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
         ))
@@ -63,64 +131,188 @@ export default function GalleryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F5FBFD',
   },
+
   content: {
     padding: 20,
-    flexGrow: 1,
+    paddingBottom: 40,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
+
+  intro: {
+    alignItems: 'center',
+    marginBottom: 24,
   },
-  emptyContainer: {
-    flex: 1,
+
+  iconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#B9E6F2',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    marginBottom: 10,
   },
+
+  iconText: {
+    fontSize: 24,
+  },
+
+  title: {
+    fontSize: 28,
+    fontWeight: '600',
+    fontFamily: 'sans-serif-medium',
+    color: '#245568',
+    marginBottom: 5,
+  },
+
+  subtitle: {
+    fontSize: 15,
+    color: '#66828D',
+    fontFamily: 'sans-serif',
+    textAlign: 'center',
+  },
+
+  counter: {
+    marginTop: 13,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#B9E6F2',
+  },
+
+  counterText: {
+    color: '#245568',
+    fontSize: 13,
+    fontWeight: '600',
+    fontFamily: 'sans-serif-medium',
+  },
+
+  emptyContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 30,
+    marginTop: 55,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#DCEFF4',
+  },
+
+  emptyIcon: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#EAF8FC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+
+  emptyIconText: {
+    fontSize: 30,
+  },
+
   emptyTitle: {
     fontSize: 21,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    fontFamily: 'sans-serif-medium',
+    color: '#245568',
     marginBottom: 10,
     textAlign: 'center',
   },
+
   emptyText: {
-    fontSize: 16,
-    lineHeight: 23,
-    color: '#666',
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#66828D',
+    fontFamily: 'sans-serif',
     textAlign: 'center',
   },
+
   photoCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    marginBottom: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    marginBottom: 22,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#DCEFF4',
   },
+
   galleryImage: {
     width: '100%',
-    height: 260,
+    height: 245,
   },
+
   photoInfo: {
-    padding: 16,
+    padding: 18,
   },
+
+  photoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+
   photoNumber: {
-    fontSize: 19,
-    fontWeight: 'bold',
-    marginBottom: 12,
+    fontSize: 20,
+    fontWeight: '600',
+    fontFamily: 'sans-serif-medium',
+    color: '#245568',
   },
-  coordinatesTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
+
+  gpsBadge: {
+    backgroundColor: '#EAF8FC',
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+
+  gpsBadgeText: {
+    color: '#3D8EA8',
+    fontSize: 11,
+    fontWeight: '600',
+    fontFamily: 'sans-serif-medium',
+  },
+
+  infoSection: {
+    marginBottom: 16,
+  },
+
+  sectionLabel: {
+    color: '#3D8EA8',
+    fontSize: 11,
+    fontWeight: '600',
+    fontFamily: 'sans-serif-medium',
+    letterSpacing: 0.8,
     marginBottom: 6,
   },
-  coordinates: {
+
+  descriptionText: {
+    color: '#405D66',
     fontSize: 15,
-    color: '#555',
-    marginBottom: 4,
+    lineHeight: 21,
+    fontFamily: 'sans-serif',
+  },
+
+  coordinateBox: {
+    backgroundColor: '#F5FBFD',
+    borderRadius: 14,
+    padding: 12,
+  },
+
+  coordinates: {
+    color: '#66828D',
+    fontSize: 13,
+    fontFamily: 'sans-serif',
+    marginBottom: 2,
+  },
+
+  coordinateValue: {
+    color: '#245568',
+    fontSize: 15,
+    fontWeight: '600',
+    fontFamily: 'sans-serif-medium',
+    marginBottom: 8,
   },
 });

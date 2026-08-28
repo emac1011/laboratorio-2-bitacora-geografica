@@ -5,6 +5,7 @@ export type PhotoEntry = {
   photoUri: string;
   latitude: number;
   longitude: number;
+  description: string;
 };
 
 type PhotoContextType = {
@@ -12,7 +13,8 @@ type PhotoContextType = {
   addPhoto: (
     photoUri: string,
     latitude: number,
-    longitude: number
+    longitude: number,
+    description: string
   ) => void;
 };
 
@@ -32,13 +34,15 @@ export function PhotoProvider({
   const addPhoto = (
     photoUri: string,
     latitude: number,
-    longitude: number
+    longitude: number,
+    description: string
   ) => {
     const newPhoto: PhotoEntry = {
       id: Date.now().toString(),
       photoUri,
       latitude,
       longitude,
+      description,
     };
 
     setPhotos((currentPhotos) => [

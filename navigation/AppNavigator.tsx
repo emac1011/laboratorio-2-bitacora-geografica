@@ -17,6 +17,19 @@ export default function AppNavigator() {
         initialRouteName="NuevaFotografia"
         screenOptions={{
           headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#B9E6F2',
+          },
+          headerTintColor: '#245568',
+          headerTitleStyle: {
+            fontSize: 20,
+            fontWeight: '600',
+            fontFamily: 'sans-serif-medium',
+          },
+          headerShadowVisible: false,
+          contentStyle: {
+            backgroundColor: '#F5FBFD',
+          },
         }}
       >
         <Stack.Screen
